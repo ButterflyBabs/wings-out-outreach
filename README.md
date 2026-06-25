@@ -194,4 +194,4 @@ For Babs & Beau, helping them spread accessibility awareness and create meaningf
 
 ---
 
-**Questions?** Contact: amilynne@amilynne.com
+**Questions?** Contact: amilynne@amilynne.com# Redeploy trigger Thu Jun 25 22:05:02 UTC 2026
