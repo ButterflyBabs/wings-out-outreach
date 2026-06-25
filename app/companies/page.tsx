@@ -104,7 +104,8 @@ export default function CompaniesPage() {
         accessibility_relevance: formData.accessibility_relevance,
         service_dog_relevance: formData.service_dog_relevance,
         priority_level: formData.priority_level,
-        notes: formData.notes || null
+        notes: formData.notes || null,
+        created_by: null
       };
 
       const { data, error } = await supabase
@@ -134,9 +135,10 @@ export default function CompaniesPage() {
       // Refresh companies list
       fetchCompanies();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding company:', error);
-      alert('Failed to add company. Please try again.');
+      const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+      alert('Failed to add company: ' + errorMessage);
     }
   }
 
