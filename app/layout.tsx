@@ -35,7 +35,7 @@ export default function RootLayout({
         
         <div className="flex min-h-screen">
           <Sidebar />
-          <main id="main-content" className="flex-1 ml-0 lg:ml-64 transition-all duration-300">
+          <main id="main-content" className="flex-1 transition-all duration-300">
             {children}
           </main>
         </div>

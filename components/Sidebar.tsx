@@ -52,9 +52,9 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-royal-plum/20 border-r border-warm-gold/10 
-                    transform transition-transform duration-300 ease-out lg:transform-none
-                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-royal-plum/20 border-r border-warm-gold/10 
+                    transform transition-transform duration-300 ease-out lg:transform-none flex-shrink-0
+                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Logo */}
         <div className="p-6 border-b border-warm-gold/10">
