@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
+import Sidebar from '@/components/Sidebar';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -32,7 +33,12 @@ export default function RootLayout({
           Skip to main content
         </a>
         
-        {children}
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main id="main-content" className="flex-1 ml-0 lg:ml-64 transition-all duration-300">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
