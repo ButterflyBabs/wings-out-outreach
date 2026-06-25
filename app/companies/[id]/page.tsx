@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, 
@@ -15,7 +15,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
-import Notification, { useNotification } from '@/components/Notification';
 
 interface Company {
   id: string;
@@ -63,7 +62,6 @@ export default function CompanyDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [formData, setFormData] = useState<Partial<Company>>({});
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
 
   useEffect(() => {
     fetchCompany();
@@ -71,10 +69,7 @@ export default function CompanyDetailPage() {
 
   async function fetchCompany() {
     try {
-      // Dynamically import supabase to avoid build-time issues
       const { supabase } = await import('@/lib/supabase');
-      
-      console.log('Fetching company with ID:', companyId);
       
       const { data, error } = await supabase
         .from('companies')
@@ -82,18 +77,13 @@ export default function CompanyDetailPage() {
         .eq('id', companyId)
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
-      console.log('Company data:', data);
+      if (error) throw error;
       
       setCompany(data);
       setFormData(data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching company:', error);
-      showError('Failed to load company: ' + (error?.message || 'Unknown error'));
+      alert('Failed to load company');
     } finally {
       setLoading(false);
     }
@@ -103,7 +93,6 @@ export default function CompanyDetailPage() {
     setIsSaving(true);
     
     try {
-      // Dynamically import supabase
       const { supabase } = await import('@/lib/supabase');
       
       const updateData = {
@@ -121,19 +110,19 @@ export default function CompanyDetailPage() {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('companies')
-        .update(updateData as any)
+        .update(updateData)
         .eq('id', companyId);
 
       if (error) throw error;
 
       await fetchCompany();
       setIsEditing(false);
-      showSuccess('Company updated successfully!');
+      alert('Company updated successfully!');
     } catch (error: any) {
       console.error('Error updating company:', error);
-      showError('Failed to update company: ' + error.message);
+      alert('Failed to update company: ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -152,14 +141,14 @@ export default function CompanyDetailPage() {
       const result = await response.json();
       
       if (result.success) {
-        showSuccess(result.message);
+        alert(result.message);
         await fetchCompany();
       } else {
-        showError('Sync failed: ' + result.error);
+        alert('Sync failed: ' + result.error);
       }
     } catch (error: any) {
       console.error('Error syncing:', error);
-      showError('Failed to sync: ' + error.message);
+      alert('Failed to sync: ' + error.message);
     } finally {
       setIsSyncing(false);
     }
@@ -201,15 +190,7 @@ export default function CompanyDetailPage() {
   }
 
   return (
-    <div>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={hideNotification}
-        />
-      )}
-      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -237,7 +218,7 @@ export default function CompanyDetailPage() {
               <button
                 onClick={handleSyncToGlobalControl}
                 disabled={isSyncing}
-                className="btn-secondary flex items-center gap-2"
+                className="px-4 py-2 bg-royal-plum/30 border border-warm-gold/20 rounded-lg text-ivory-light hover:bg-royal-plum/50 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                 {company.global_control_sync_status === 'synced' ? 'Re-sync' : 'Sync to Global Control'}
@@ -351,24 +332,6 @@ export default function CompanyDetailPage() {
                 )}
               </div>
 
-              {/* Subcategory */}
-              <div>
-                <label className="block text-sm font-medium text-ivory-light/60 mb-1">
-                  Subcategory
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.subcategory || ''}
-                    onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
-                    className="w-full px-4 py-2 bg-royal-plum/20 border border-warm-gold/20 rounded-lg text-ivory-light"
-                    placeholder="e.g., Power Wheelchairs"
-                  />
-                ) : (
-                  <p className="text-ivory-light">{company.subcategory || '—'}</p>
-                )}
-              </div>
-
               {/* Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -419,29 +382,11 @@ export default function CompanyDetailPage() {
                 onChange={(e) => setFormData({...formData, brand_summary: e.target.value})}
                 rows={4}
                 className="w-full px-4 py-2 bg-royal-plum/20 border border-warm-gold/20 rounded-lg text-ivory-light"
-                placeholder="Describe the company, their products, and why they're a good fit..."
+                placeholder="Describe the company..."
               />
             ) : (
               <p className="text-ivory-light/80 whitespace-pre-wrap">
                 {company.brand_summary || 'No summary added yet.'}
-              </p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
-            <h2 className="font-serif text-xl font-bold text-warm-gold mb-4">Notes</h2>
-            {isEditing ? (
-              <textarea
-                value={formData.notes || ''}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                rows={3}
-                className="w-full px-4 py-2 bg-royal-plum/20 border border-warm-gold/20 rounded-lg text-ivory-light"
-                placeholder="Additional notes, contact info, etc."
-              />
-            ) : (
-              <p className="text-ivory-light/80 whitespace-pre-wrap">
-                {company.notes || 'No notes added yet.'}
               </p>
             )}
           </div>
@@ -546,32 +491,6 @@ export default function CompanyDetailPage() {
                     <span className="text-ivory-light/60">Not synced</span>
                   </>
                 )}
-              </div>
-              
-              {company.global_control_synced_at && (
-                <p className="text-sm text-ivory-light/40">
-                  Last synced: {new Date(company.global_control_synced_at).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Created/Updated */}
-          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
-            <h2 className="font-serif text-xl font-bold text-warm-gold mb-4">History</h2>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-ivory-light/60">Created:</span>
-                <span className="text-ivory-light">
-                  {new Date(company.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-ivory-light/60">Updated:</span>
-                <span className="text-ivory-light">
-                  {new Date(company.updated_at).toLocaleDateString()}
-                </span>
               </div>
             </div>
           </div>
