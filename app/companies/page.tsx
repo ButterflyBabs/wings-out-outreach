@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -286,6 +286,7 @@ export default function CompaniesPage() {
         </div>
       )}
 
+    <div>
       {/* Notification */}
       {notification && (
         <Notification
