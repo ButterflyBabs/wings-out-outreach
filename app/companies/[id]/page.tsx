@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { 
   Building2, 
   Globe,
@@ -70,19 +69,29 @@ export default function CompanyDetailPage() {
 
   async function fetchCompany() {
     try {
+      // Dynamically import supabase to avoid build-time issues
+      const { supabase } = await import('@/lib/supabase');
+      
+      console.log('Fetching company with ID:', companyId);
+      
       const { data, error } = await supabase
         .from('companies')
         .select('*')
         .eq('id', companyId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Company data:', data);
       
       setCompany(data);
       setFormData(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching company:', error);
-      alert('Failed to load company');
+      alert('Failed to load company: ' + (error?.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -92,6 +101,9 @@ export default function CompanyDetailPage() {
     setIsSaving(true);
     
     try {
+      // Dynamically import supabase
+      const { supabase } = await import('@/lib/supabase');
+      
       const updateData = {
         company_name: formData.company_name,
         website_url: formData.website_url || null,
@@ -107,9 +119,9 @@ export default function CompanyDetailPage() {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('companies')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', companyId);
 
       if (error) throw error;
