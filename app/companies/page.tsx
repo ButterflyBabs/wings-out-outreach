@@ -10,7 +10,8 @@ import {
   Globe,
   Star,
   CheckCircle2,
-  X
+  X,
+  Archive
 } from 'lucide-react';
 
 interface Company {
@@ -30,6 +31,7 @@ export default function CompaniesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [showArchived, setShowArchived] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -120,7 +122,8 @@ export default function CompaniesPage() {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.company_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = filterCategory === 'all' || company.category === filterCategory;
-    return matchesSearch && matchesCategory;
+    const matchesArchive = showArchived || company.priority_level !== 'ARCHIVED';
+    return matchesSearch && matchesCategory && matchesArchive;
   });
 
   function getCategoryLabel(value: string | null) {
@@ -133,6 +136,7 @@ export default function CompaniesPage() {
       case 'B': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'C': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       case 'D': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case 'ARCHIVED': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   }
@@ -174,6 +178,17 @@ export default function CompaniesPage() {
             <option key={cat.value} value={cat.value}>{cat.label}</option>
           ))}
         </select>
+        <button
+          onClick={() => setShowArchived(!showArchived)}
+          className={`px-4 py-3 border rounded-xl transition-colors flex items-center gap-2 ${
+            showArchived 
+              ? 'bg-red-500/20 border-red-500/50 text-red-400' 
+              : 'bg-royal-plum/20 border-warm-gold/20 text-ivory-light/70 hover:text-ivory-light'
+          }`}
+        >
+          <Archive className="w-4 h-4" />
+          {showArchived ? 'Hide Archived' : 'Show Archived'}
+        </button>
       </div>
 
       {loading ? (

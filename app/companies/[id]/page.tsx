@@ -12,7 +12,10 @@ import {
   Save,
   X,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Archive,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -61,6 +64,10 @@ export default function CompanyDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [formData, setFormData] = useState<Partial<Company>>({});
 
   useEffect(() => {
@@ -154,6 +161,63 @@ export default function CompanyDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    setIsDeleting(true);
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      // Delete related records first (contacts, opportunities, tasks)
+      await (supabase as any).from('contacts').delete().eq('company_id', companyId);
+      await (supabase as any).from('opportunities').delete().eq('company_id', companyId);
+      await (supabase as any).from('tasks').delete().eq('company_id', companyId);
+      
+      // Delete the company
+      const { error } = await (supabase as any)
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      alert('Company deleted successfully');
+      router.push('/companies');
+    } catch (error: any) {
+      console.error('Error deleting company:', error);
+      alert('Failed to delete company: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
+  async function handleArchive() {
+    setIsArchiving(true);
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      const { error } = await (supabase as any)
+        .from('companies')
+        .update({ 
+          priority_level: 'ARCHIVED',
+          notes: company?.notes ? `${company.notes}\n\n[ARCHIVED: ${new Date().toISOString().split('T')[0]} - Marked as not viable/dead]` : `[ARCHIVED: ${new Date().toISOString().split('T')[0]} - Marked as not viable/dead]`
+        })
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      await fetchCompany();
+      alert('Company archived successfully');
+    } catch (error: any) {
+      console.error('Error archiving company:', error);
+      alert('Failed to archive company: ' + error.message);
+    } finally {
+      setIsArchiving(false);
+      setShowArchiveConfirm(false);
+    }
+  }
+
   function getCategoryLabel(value: string | null) {
     return categories.find(c => c.value === value)?.label || value || 'Uncategorized';
   }
@@ -215,6 +279,20 @@ export default function CompanyDetailPage() {
         <div className="flex items-center gap-3">
           {!isEditing ? (
             <>
+              <button
+                onClick={() => setShowArchiveConfirm(true)}
+                className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition-colors flex items-center gap-2"
+              >
+                <Archive className="w-4 h-4" />
+                Archive
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
               <button
                 onClick={handleSyncToGlobalControl}
                 disabled={isSyncing}
@@ -496,6 +574,102 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-deep-indigo border border-red-500/30 rounded-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl font-bold text-ivory-light">Delete Company</h3>
+                <p className="text-ivory-light/60 text-sm">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <p className="text-ivory-light/80 mb-6">
+              Are you sure you want to permanently delete <strong className="text-ivory-light">{company?.company_name}</strong>? 
+              This will also delete all associated contacts, opportunities, and tasks.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-ivory-light/70 hover:text-ivory-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-6 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 hover:bg-red-500/30 transition-colors flex items-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Yes, Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirmation Modal */}
+      {showArchiveConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-deep-indigo border border-yellow-500/30 rounded-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                <Archive className="w-6 h-6 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl font-bold text-ivory-light">Archive Company</h3>
+                <p className="text-ivory-light/60 text-sm">Mark as not viable or dead</p>
+              </div>
+            </div>
+            
+            <p className="text-ivory-light/80 mb-6">
+              Archive <strong className="text-ivory-light">{company?.company_name}</strong>? 
+              This will mark it as archived and exclude it from active lists, but keep the record for reference.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowArchiveConfirm(false)}
+                className="px-4 py-2 text-ivory-light/70 hover:text-ivory-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={isArchiving}
+                className="px-6 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg text-yellow-400 hover:bg-yellow-500/30 transition-colors flex items-center gap-2"
+              >
+                {isArchiving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
+                    Archiving...
+                  </>
+                ) : (
+                  <>
+                    <Archive className="w-4 h-4" />
+                    Yes, Archive
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
