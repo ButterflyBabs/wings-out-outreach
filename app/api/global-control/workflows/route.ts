@@ -1,10 +1,16 @@
-import { NextResponse } from 'next/server';
-import { getGlobalControlWorkflows } from '@/lib/global-control';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+// Mark as dynamic to avoid static generation
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
+    // Dynamically import to avoid build-time issues
+    const { getGlobalControlWorkflows } = await import('@/lib/global-control');
+    
     const result = await getGlobalControlWorkflows();
     return NextResponse.json(result);
+
   } catch (error) {
     console.error('Error fetching workflows:', error);
     return NextResponse.json(

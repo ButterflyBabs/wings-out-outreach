@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncCompanyToGlobalControl, bulkSyncCompaniesToGlobalControl } from '@/lib/global-control';
+
+// Mark as dynamic to avoid static generation
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // Dynamically import to avoid build-time issues
+    const { syncCompanyToGlobalControl, bulkSyncCompaniesToGlobalControl } = await import('@/lib/global-control');
+    
     const body = await request.json();
     const { companyId, bulk = false } = body;
 
     if (bulk) {
-      // Bulk sync all unsynced companies
       const result = await bulkSyncCompaniesToGlobalControl();
       return NextResponse.json(result);
     }
@@ -19,7 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sync single company
     const result = await syncCompanyToGlobalControl(companyId);
     return NextResponse.json(result);
 
