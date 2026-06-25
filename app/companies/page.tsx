@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
+import Notification, { useNotification } from '@/components/Notification';
 
 // Mark as dynamic to avoid static generation issues
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,7 @@ export default function CompaniesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const { notification, showSuccess, showError, hideNotification } = useNotification();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -139,6 +141,9 @@ export default function CompaniesPage() {
       });
       setShowAddModal(false);
       
+      // Show success notification
+      showSuccess(`Company "${formData.company_name}" added successfully!`);
+      
       // Refresh companies list
       fetchCompanies();
       
@@ -146,7 +151,7 @@ export default function CompaniesPage() {
       console.error('Error adding company:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
       const errorMessage = error?.message || error?.error?.message || error?.details || 'Unknown error';
-      alert('Failed to add company: ' + errorMessage);
+      showError('Failed to add company: ' + errorMessage);
     }
   }
 
@@ -279,6 +284,15 @@ export default function CompaniesPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={hideNotification}
+        />
       )}
 
       {/* Add Company Modal */}

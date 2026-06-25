@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
+import Notification, { useNotification } from '@/components/Notification';
 
 interface Company {
   id: string;
@@ -62,6 +63,7 @@ export default function CompanyDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [formData, setFormData] = useState<Partial<Company>>({});
+  const { notification, showSuccess, showError, hideNotification } = useNotification();
 
   useEffect(() => {
     fetchCompany();
@@ -91,7 +93,7 @@ export default function CompanyDetailPage() {
       setFormData(data);
     } catch (error: any) {
       console.error('Error fetching company:', error);
-      alert('Failed to load company: ' + (error?.message || 'Unknown error'));
+      showError('Failed to load company: ' + (error?.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -128,10 +130,10 @@ export default function CompanyDetailPage() {
 
       await fetchCompany();
       setIsEditing(false);
-      alert('Company updated successfully!');
+      showSuccess('Company updated successfully!');
     } catch (error: any) {
       console.error('Error updating company:', error);
-      alert('Failed to update company: ' + error.message);
+      showError('Failed to update company: ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -150,14 +152,14 @@ export default function CompanyDetailPage() {
       const result = await response.json();
       
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         await fetchCompany();
       } else {
-        alert('Sync failed: ' + result.error);
+        showError('Sync failed: ' + result.error);
       }
     } catch (error: any) {
       console.error('Error syncing:', error);
-      alert('Failed to sync: ' + error.message);
+      showError('Failed to sync: ' + error.message);
     } finally {
       setIsSyncing(false);
     }
@@ -179,27 +181,53 @@ export default function CompanyDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
-      </div>
+      <>
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={hideNotification}
+          />
+        )}
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
+        </div>
+      </>
     );
   }
 
   if (!company) {
     return (
-      <div className="p-6">
-        <div className="text-center py-12">
-          <h2 className="text-xl text-ivory-light">Company not found</h2>
-          <Link href="/companies" className="text-sacred-teal hover:underline mt-4 inline-block">
-            Back to Companies
-          </Link>
+      <>
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={hideNotification}
+          />
+        )}
+        <div className="p-6">
+          <div className="text-center py-12">
+            <h2 className="text-xl text-ivory-light">Company not found</h2>
+            <Link href="/companies" className="text-sacred-teal hover:underline mt-4 inline-block">
+              Back to Companies
+            </Link>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={hideNotification}
+        />
+      )}
+      <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -567,6 +595,6 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
