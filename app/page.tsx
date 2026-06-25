@@ -45,22 +45,34 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load stats immediately with cached data if available
+    const cachedStats = localStorage.getItem('dashboardStats');
+    if (cachedStats) {
+      setStats(JSON.parse(cachedStats));
+      setLoading(false);
+    }
+    
+    // Then fetch fresh data
     fetchStats();
   }, []);
 
   async function fetchStats() {
     try {
       // Fetch companies count
-      const { count: companiesCount } = await supabase
+      const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')
         .select('*', { count: 'exact', head: true });
 
+      if (companiesError) throw companiesError;
+
       // Fetch opportunities count
-      const { count: opportunitiesCount } = await supabase
+      const { count: opportunitiesCount, error: opportunitiesError } = await supabase
         .from('opportunities')
         .select('*', { count: 'exact', head: true });
 
-      setStats({
+      if (opportunitiesError) throw opportunitiesError;
+
+      const newStats = {
         totalCompanies: companiesCount || 0,
         activeOpportunities: opportunitiesCount || 0,
         draftsAwaitingApproval: 0,
@@ -71,9 +83,15 @@ export default function Dashboard() {
         activePartnerships: 0,
         revenueThisMonth: 0,
         outstandingPayments: 0,
-      });
+      };
+
+      setStats(newStats);
+      
+      // Cache the stats
+      localStorage.setItem('dashboardStats', JSON.stringify(newStats));
     } catch (error) {
       console.error('Error fetching stats:', error);
+      // Don't show error, just keep cached data or zeros
     } finally {
       setLoading(false);
     }
@@ -124,13 +142,18 @@ export default function Dashboard() {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
+  // Show skeleton UI while loading
+  const renderSkeletonCard = () => (
+    <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6 animate-pulse">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="h-4 w-24 bg-ivory-light/10 rounded"></div>
+          <div className="h-8 w-16 bg-ivory-light/20 rounded"></div>
+        </div>
+        <div className="p-3 rounded-xl bg-ivory-light/10 w-12 h-12"></div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -182,25 +205,28 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {statCards.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <div 
-              key={index}
-              className="card-hover bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-ivory-light/60 text-sm font-medium mb-1">{card.label}</p>
-                  <p className={`text-4xl font-bold ${card.color}`}>{card.value}</p>
+        {loading 
+          ? Array(6).fill(0).map((_, index) => renderSkeletonCard())
+          : statCards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <div 
+                  key={index}
+                  className="card-hover bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-ivory-light/60 text-sm font-medium mb-1">{card.label}</p>
+                      <p className={`text-4xl font-bold ${card.color}`}>{card.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl ${card.bgColor}`}>
+                      <Icon className={`w-6 h-6 ${card.color}`} />
+                    </div>
+                  </div>
                 </div>
-                <div className={`p-3 rounded-xl ${card.bgColor}`}>
-                  <Icon className={`w-6 h-6 ${card.color}`} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })
+        }
       </div>
 
       {/* Quick Actions */}
