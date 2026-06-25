@@ -214,7 +214,10 @@ export default function Dashboard() {
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-sacred-teal rounded-full" />
               </button>
-              <button className="btn-primary flex items-center gap-2">
+              <button 
+              onClick={() => window.location.href = '/companies'}
+              className="btn-primary flex items-center gap-2"
+            >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Company</span>
               </button>
@@ -283,7 +286,12 @@ export default function Dashboard() {
                     <p className="font-medium text-ivory-light">Add your first company</p>
                     <p className="text-sm text-ivory-light/60">Start building your prospect list</p>
                   </div>
-                  <button className="btn-primary text-sm py-2 px-4">Add</button>
+                  <button 
+                    onClick={() => window.location.href = '/companies'}
+                    className="btn-primary text-sm py-2 px-4"
+                  >
+                    Add
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-deep-indigo/50 border border-warm-gold/10 opacity-50">
