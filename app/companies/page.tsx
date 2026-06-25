@@ -87,9 +87,15 @@ export default function CompaniesPage() {
     e.preventDefault();
     
     try {
+      // Normalize website URL - add https:// if missing
+      let websiteUrl = formData.website_url.trim();
+      if (websiteUrl && !websiteUrl.match(/^https?:\/\//i)) {
+        websiteUrl = 'https://' + websiteUrl;
+      }
+
       const insertData = {
         company_name: formData.company_name,
-        website_url: formData.website_url || null,
+        website_url: websiteUrl || null,
         category: formData.category || null,
         subcategory: formData.subcategory || null,
         headquarters_location: formData.headquarters_location || null,
@@ -299,12 +305,15 @@ export default function CompaniesPage() {
                   Website URL
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.website_url}
                   onChange={(e) => setFormData({...formData, website_url: e.target.value})}
                   className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light focus:outline-none focus:border-sacred-teal"
-                  placeholder="https://..."
+                  placeholder="https://example.com or example.com"
                 />
+                <p className="text-xs text-ivory-light/50 mt-1">
+                  Enter with or without https://
+                </p>
               </div>
 
               {/* Category */}
