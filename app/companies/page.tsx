@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 import { 
   Building2, 
   Plus, 
@@ -226,9 +227,10 @@ export default function CompaniesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCompanies.map((company) => (
-            <div 
+            <Link 
               key={company.id}
-              className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6 card-hover"
+              href={`/companies/${company.id}`}
+              className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6 card-hover block"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-sacred-teal/20 flex items-center justify-center">
@@ -267,7 +269,7 @@ export default function CompaniesPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
