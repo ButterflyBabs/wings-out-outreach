@@ -13,13 +13,15 @@ import {
   Settings,
   Menu,
   X,
-  LayoutDashboard
+  LayoutDashboard,
+  Sparkles
 } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/' },
   { id: 'companies', label: 'Companies', icon: Building2, href: '/companies' },
   { id: 'opportunities', label: 'Opportunities', icon: Briefcase, href: '/opportunities' },
+  { id: 'research', label: 'AI Research', icon: Sparkles, href: '/research' },
   { id: 'outreach', label: 'Outreach', icon: Mail, href: '/outreach' },
   { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, href: '/pipeline' },
   { id: 'approvals', label: 'Approvals', icon: CheckCircle2, href: '/approvals' },
