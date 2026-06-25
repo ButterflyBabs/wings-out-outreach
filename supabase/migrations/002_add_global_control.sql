@@ -45,3 +45,20 @@ CREATE TRIGGER trigger_update_global_control_sync
 COMMENT ON COLUMN companies.global_control_contact_id IS 'Global Control CRM contact ID for this company';
 COMMENT ON COLUMN companies.global_control_synced_at IS 'Timestamp when company was last synced to Global Control';
 COMMENT ON COLUMN companies.global_control_sync_status IS 'Sync status: pending, synced, failed, or excluded';
+
+-- Create RPC function for updating Global Control sync info
+CREATE OR REPLACE FUNCTION update_company_global_control(
+  p_company_id UUID,
+  p_global_control_id TEXT,
+  p_synced_at TIMESTAMPTZ
+)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE companies
+  SET 
+    global_control_contact_id = p_global_control_id,
+    global_control_synced_at = p_synced_at,
+    global_control_sync_status = 'synced'
+  WHERE id = p_company_id;
+END;
+$$ LANGUAGE plpgsql;

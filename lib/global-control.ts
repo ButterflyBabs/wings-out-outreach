@@ -26,7 +26,7 @@ export async function syncCompanyToGlobalControl(companyId: string) {
     // Get company data from Supabase
     const { data: company, error } = await supabase
       .from('companies')
-      .select('*')
+      .select('id, company_name, website_url, category, subcategory, priority_level, accessibility_relevance, service_dog_relevance')
       .eq('id', companyId)
       .single();
 
@@ -34,35 +34,46 @@ export async function syncCompanyToGlobalControl(companyId: string) {
       throw new Error(`Company not found: ${error?.message}`);
     }
 
+    const typedCompany = company as {
+      id: string;
+      company_name: string;
+      website_url?: string;
+      category?: string;
+      subcategory?: string;
+      priority_level?: string;
+      accessibility_relevance?: number;
+      service_dog_relevance?: number;
+    };
+
     // Get primary contact for this company
     const { data: contacts } = await supabase
       .from('contacts')
-      .select('*')
+      .select('email, first_name, last_name, phone')
       .eq('company_id', companyId)
       .limit(1);
 
-    const primaryContact = contacts?.[0];
+    const primaryContact = contacts?.[0] as { email?: string; first_name?: string; last_name?: string; phone?: string } | undefined;
 
     // Prepare contact data for Global Control
     const contactData: GlobalControlContact = {
-      email: primaryContact?.email || `${company.company_name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
-      firstName: primaryContact?.first_name || company.company_name,
+      email: primaryContact?.email || `${typedCompany.company_name.toLowerCase().replace(/\s+/g, '.')}@placeholder.com`,
+      firstName: primaryContact?.first_name || typedCompany.company_name,
       lastName: primaryContact?.last_name || '',
       phone: primaryContact?.phone || '',
       tags: [
         'wings-out-outreach',
         'prospect',
-        company.category || 'uncategorized',
-        `priority-${company.priority_level || 'c'}`
+        typedCompany.category || 'uncategorized',
+        `priority-${typedCompany.priority_level || 'c'}`
       ],
       customFields: {
-        company_name: company.company_name,
-        company_website: company.website_url,
-        company_category: company.category,
-        company_subcategory: company.subcategory,
-        accessibility_relevance: company.accessibility_relevance,
-        service_dog_relevance: company.service_dog_relevance,
-        wings_out_company_id: company.id,
+        company_name: typedCompany.company_name,
+        company_website: typedCompany.website_url,
+        company_category: typedCompany.category,
+        company_subcategory: typedCompany.subcategory,
+        accessibility_relevance: typedCompany.accessibility_relevance,
+        service_dog_relevance: typedCompany.service_dog_relevance,
+        wings_out_company_id: typedCompany.id,
         source: 'Wings Out Outreach'
       },
       source: 'Wings Out Outreach'
@@ -87,18 +98,16 @@ export async function syncCompanyToGlobalControl(companyId: string) {
     const globalControlContact = await response.json();
 
     // Update company in Supabase with Global Control ID
-    await supabase
-      .from('companies')
-      .update({
-        global_control_contact_id: globalControlContact.id,
-        global_control_synced_at: new Date().toISOString()
-      })
-      .eq('id', companyId);
+    await (supabase.rpc as any)('update_company_global_control', {
+      p_company_id: companyId,
+      p_global_control_id: globalControlContact.id,
+      p_synced_at: new Date().toISOString()
+    });
 
     return {
       success: true,
       globalControlContactId: globalControlContact.id,
-      message: `Company "${company.company_name}" synced to Global Control`
+      message: `Company "${typedCompany.company_name}" synced to Global Control`
     };
 
   } catch (error) {
@@ -180,16 +189,10 @@ export async function getGlobalControlWorkflows() {
 // Sync opportunity stage change to Global Control
 export async function syncOpportunityStage(opportunityId: string, newStage: string) {
   try {
-    // Get opportunity data
+    // Get opportunity data with company info
     const { data: opportunity, error } = await supabase
       .from('opportunities')
-      .select(`
-        *,
-        companies (
-          global_control_contact_id,
-          company_name
-        )
-      `)
+      .select('id, company_id, opportunity_stage')
       .eq('id', opportunityId)
       .single();
 
@@ -197,11 +200,21 @@ export async function syncOpportunityStage(opportunityId: string, newStage: stri
       throw new Error(`Opportunity not found: ${error?.message}`);
     }
 
-    const globalControlContactId = opportunity.companies?.global_control_contact_id;
+    const typedOpportunity = opportunity as { id: string; company_id: string; opportunity_stage: string };
+
+    // Get company Global Control ID
+    const { data: company } = await supabase
+      .from('companies')
+      .select('global_control_contact_id, company_name')
+      .eq('id', typedOpportunity.company_id)
+      .single();
+
+    const typedCompany = company as { global_control_contact_id?: string; company_name?: string } | null;
+    const globalControlContactId = typedCompany?.global_control_contact_id;
 
     if (!globalControlContactId) {
       // Company not synced yet, sync it first
-      const syncResult = await syncCompanyToGlobalControl(opportunity.company_id);
+      const syncResult = await syncCompanyToGlobalControl(typedOpportunity.company_id);
       if (!syncResult.success) {
         throw new Error('Failed to sync company first');
       }
@@ -265,12 +278,13 @@ export async function bulkSyncCompaniesToGlobalControl() {
     };
 
     for (const company of companies || []) {
-      const result = await syncCompanyToGlobalControl(company.id);
+      const typedCompany = company as { id: string; company_name: string };
+      const result = await syncCompanyToGlobalControl(typedCompany.id);
       if (result.success) {
         results.success++;
       } else {
         results.failed++;
-        results.errors.push(`${company.company_name}: ${result.error}`);
+        results.errors.push(`${typedCompany.company_name}: ${result.error}`);
       }
     }
 
