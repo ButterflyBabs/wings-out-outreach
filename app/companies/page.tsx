@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -9,12 +8,13 @@ import {
   Search, 
   Filter,
   Globe,
-  MapPin,
   Star,
-  MoreHorizontal,
   CheckCircle2,
   X
 } from 'lucide-react';
+
+// Mark as dynamic to avoid static generation issues
+export const dynamic = 'force-dynamic';
 
 interface Company {
   id: string;
@@ -70,6 +70,9 @@ export default function CompaniesPage() {
 
   async function fetchCompanies() {
     try {
+      // Dynamically import supabase to avoid build-time issues
+      const { supabase } = await import('@/lib/supabase');
+      
       const { data, error } = await supabase
         .from('companies')
         .select('*')
@@ -88,6 +91,9 @@ export default function CompaniesPage() {
     e.preventDefault();
     
     try {
+      // Dynamically import supabase
+      const { supabase } = await import('@/lib/supabase');
+      
       // Normalize website URL - add https:// if missing
       let websiteUrl = formData.website_url.trim();
       if (websiteUrl && !websiteUrl.match(/^https?:\/\//i)) {
@@ -109,9 +115,9 @@ export default function CompaniesPage() {
         created_by: null
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('companies')
-        .insert(insertData as any)
+        .insert(insertData)
         .select()
         .single();
 
@@ -147,12 +153,18 @@ export default function CompaniesPage() {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (company.website_url && company.website_url.toLowerCase().includes(searchQuery.toLowerCase()));
+    
     const matchesCategory = filterCategory === 'all' || company.category === filterCategory;
+    
     return matchesSearch && matchesCategory;
   });
 
-  function getPriorityColor(priority: string | null) {
-    switch (priority) {
+  function getCategoryLabel(value: string | null) {
+    return categories.find(c => c.value === value)?.label || value || 'Uncategorized';
+  }
+
+  function getPriorityColor(level: string | null) {
+    switch (level) {
       case 'A': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'B': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'C': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
@@ -161,22 +173,17 @@ export default function CompaniesPage() {
     }
   }
 
-  function getCategoryLabel(category: string | null) {
-    const cat = categories.find(c => c.value === category);
-    return cat?.label || category || 'Uncategorized';
-  }
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl font-bold text-warm-gold">Companies</h1>
           <p className="text-ivory-light/60 mt-1">Manage your prospect companies and partnerships</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex items-center gap-2 self-start"
         >
           <Plus className="w-4 h-4" />
           Add Company
@@ -372,7 +379,7 @@ export default function CompaniesPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-ivory-light mb-2">
-                    Service Dog Fit (1-10)
+                    Service Dog (1-10)
                   </label>
                   <input
                     type="number"
@@ -394,8 +401,8 @@ export default function CompaniesPage() {
                   value={formData.brand_summary}
                   onChange={(e) => setFormData({...formData, brand_summary: e.target.value})}
                   rows={3}
-                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light focus:outline-none focus:border-sacred-teal resize-none"
-                  placeholder="Brief description of the company and their products/services..."
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light focus:outline-none focus:border-sacred-teal"
+                  placeholder="Brief description of the company and why they're a good fit..."
                 />
               </div>
 
@@ -408,13 +415,13 @@ export default function CompaniesPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   rows={2}
-                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light focus:outline-none focus:border-sacred-teal resize-none"
-                  placeholder="Any additional notes..."
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light focus:outline-none focus:border-sacred-teal"
+                  placeholder="Additional notes..."
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-4 pt-4 border-t border-warm-gold/10">
+              {/* Submit */}
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}

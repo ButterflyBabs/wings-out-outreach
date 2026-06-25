@@ -13,7 +13,9 @@ import {
   Plus,
   Bell
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+
+// Mark as dynamic to avoid static generation issues
+export const dynamic = 'force-dynamic';
 
 // Dashboard stats type
 interface DashboardStats {
@@ -58,6 +60,9 @@ export default function Dashboard() {
 
   async function fetchStats() {
     try {
+      // Dynamically import supabase to avoid build-time issues
+      const { supabase } = await import('@/lib/supabase');
+      
       // Fetch companies count
       const { count: companiesCount, error: companiesError } = await supabase
         .from('companies')

@@ -32,6 +32,7 @@ interface Company {
   notes: string | null;
   global_control_contact_id: string | null;
   global_control_sync_status: string | null;
+  global_control_synced_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +107,7 @@ export default function CompanyDetailPage() {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('companies')
         .update(updateData)
         .eq('id', companyId);
