@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, 
@@ -181,7 +181,7 @@ export default function CompanyDetailPage() {
 
   if (loading) {
     return (
-      <>
+      <Fragment>
         {notification && (
           <Notification
             message={notification.message}
@@ -192,13 +192,13 @@ export default function CompanyDetailPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
         </div>
-      </>
+      </Fragment>
     );
   }
 
   if (!company) {
     return (
-      <>
+      <Fragment>
         {notification && (
           <Notification
             message={notification.message}
@@ -214,12 +214,12 @@ export default function CompanyDetailPage() {
             </Link>
           </div>
         </div>
-      </>
+      </Fragment>
     );
   }
 
   return (
-    <>
+    <Fragment>
       {notification && (
         <Notification
           message={notification.message}
@@ -595,6 +595,6 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       </div>
-    </>
+    </Fragment>
   );
 }
