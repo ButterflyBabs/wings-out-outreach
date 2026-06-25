@@ -87,14 +87,23 @@ export default function CompaniesPage() {
     e.preventDefault();
     
     try {
+      const insertData = {
+        company_name: formData.company_name,
+        website_url: formData.website_url || null,
+        category: formData.category || null,
+        subcategory: formData.subcategory || null,
+        headquarters_location: formData.headquarters_location || null,
+        country: formData.country || null,
+        brand_summary: formData.brand_summary || null,
+        accessibility_relevance: formData.accessibility_relevance,
+        service_dog_relevance: formData.service_dog_relevance,
+        priority_level: formData.priority_level,
+        notes: formData.notes || null
+      };
+
       const { data, error } = await supabase
         .from('companies')
-        .insert([{
-          ...formData,
-          website_url: formData.website_url || null,
-          accessibility_relevance: parseInt(formData.accessibility_relevance as any),
-          service_dog_relevance: parseInt(formData.service_dog_relevance as any)
-        }])
+        .insert(insertData as any)
         .select()
         .single();
 
@@ -244,7 +253,9 @@ export default function CompaniesPage() {
                   </span>
                 </div>
                 {company.global_control_sync_status === 'synced' && (
-                  <CheckCircle2 className="w-5 h-5 text-green-400" title="Synced to Global Control" />
+                  <div title="Synced to Global Control">
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  </div>
                 )}
               </div>
             </div>
