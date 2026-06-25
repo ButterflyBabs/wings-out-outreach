@@ -286,7 +286,6 @@ export default function CompaniesPage() {
         </div>
       )}
 
-    <div>
       {/* Notification */}
       {notification && (
         <Notification

@@ -181,38 +181,20 @@ export default function CompanyDetailPage() {
 
   if (loading) {
     return (
-      <div>
-        {notification && (
-          <Notification
-            message={notification.message}
-            type={notification.type}
-            onClose={hideNotification}
-          />
-        )}
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sacred-teal"></div>
       </div>
     );
   }
 
   if (!company) {
     return (
-      <div>
-        {notification && (
-          <Notification
-            message={notification.message}
-            type={notification.type}
-            onClose={hideNotification}
-          />
-        )}
-        <div className="p-6">
-          <div className="text-center py-12">
-            <h2 className="text-xl text-ivory-light">Company not found</h2>
-            <Link href="/companies" className="text-sacred-teal hover:underline mt-4 inline-block">
-              Back to Companies
-            </Link>
-          </div>
+      <div className="p-6">
+        <div className="text-center py-12">
+          <h2 className="text-xl text-ivory-light">Company not found</h2>
+          <Link href="/companies" className="text-sacred-teal hover:underline mt-4 inline-block">
+            Back to Companies
+          </Link>
         </div>
       </div>
     );
