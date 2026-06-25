@@ -137,7 +137,8 @@ export default function CompaniesPage() {
       
     } catch (error: any) {
       console.error('Error adding company:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Unknown error';
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      const errorMessage = error?.message || error?.error?.message || error?.details || 'Unknown error';
       alert('Failed to add company: ' + errorMessage);
     }
   }
