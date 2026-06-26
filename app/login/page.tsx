@@ -78,14 +78,14 @@ export default function LoginPage() {
       
       // Sign in with demo credentials
       const { error } = await supabase.auth.signInWithPassword({
-        email: 'demo@wingsout.app',
+        email: 'demo@wingsoutoutreach.com',
         password: 'demo123456'
       });
 
       if (error) {
         // If demo user doesn't exist, create it
         const { error: signUpError } = await supabase.auth.signUp({
-          email: 'demo@wingsout.app',
+          email: 'demo@wingsoutoutreach.com',
           password: 'demo123456'
         });
         
@@ -93,7 +93,7 @@ export default function LoginPage() {
         
         // Try signing in again
         const { error: loginError } = await supabase.auth.signInWithPassword({
-          email: 'demo@wingsout.app',
+          email: 'demo@wingsoutoutreach.com',
           password: 'demo123456'
         });
         
