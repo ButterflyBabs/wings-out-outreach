@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Globe,
   Key,
-  Database
+  Database,
+  Send
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -46,8 +47,12 @@ export default function SettingsPage() {
     globalControl: { connected: true, lastSync: '2026-06-25' },
     gmail: { connected: false, lastSync: null },
     openai: { connected: true, lastSync: null },
-    stripe: { connected: false, lastSync: null }
+    stripe: { connected: false, lastSync: null },
+    telegram: { connected: false, botToken: '', chatId: '' }
   });
+
+  // Telegram setup steps
+  const [telegramStep, setTelegramStep] = useState(1);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -297,6 +302,144 @@ export default function SettingsPage() {
                 <button className="px-4 py-2 bg-sacred-teal/20 border border-sacred-teal/30 rounded-lg text-sacred-teal text-sm hover:bg-sacred-teal/30 transition-colors">
                   Connect
                 </button>
+              </div>
+
+              {/* Telegram */}
+              <div className="p-4 bg-deep-indigo/30 rounded-xl border border-warm-gold/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-400/20 flex items-center justify-center">
+                      <Send className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-ivory-light">Telegram</p>
+                      <p className="text-sm text-ivory-light/50">Get notifications via Telegram</p>
+                    </div>
+                  </div>
+                  {integrations.telegram.connected ? (
+                    <span className="px-3 py-1 rounded-lg text-sm font-medium bg-green-500/20 text-green-400">
+                      Connected
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-lg text-sm font-medium bg-gray-500/20 text-gray-400">
+                      Not Connected
+                    </span>
+                  )}
+                </div>
+
+                {!integrations.telegram.connected ? (
+                  <div className="space-y-4 mt-4 border-t border-warm-gold/10 pt-4">
+                    <div className="bg-royal-plum/20 rounded-lg p-4">
+                      <h4 className="font-medium text-ivory-light mb-2">Setup Instructions</h4>
+                      
+                      {telegramStep === 1 && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-ivory-light/70">Step 1: Create a Telegram Bot</p>
+                          <ol className="text-sm text-ivory-light/60 list-decimal list-inside space-y-1">
+                            <li>Open Telegram and search for <strong>@BotFather</strong></li>
+                            <li>Send <code>/newbot</code> and follow the prompts</li>
+                            <li>Give your bot a name (e.g., "Wings Out Notifications")</li>
+                            <li>Give it a username (e.g., "wings_out_bot")</li>
+                            <li>Copy the bot token (looks like: 123456:ABC-DEF...)</li>
+                          </ol>
+                          <button 
+                            onClick={() => setTelegramStep(2)}
+                            className="mt-3 px-4 py-2 bg-sacred-teal/20 border border-sacred-teal/30 rounded-lg text-sacred-teal text-sm hover:bg-sacred-teal/30 transition-colors"
+                          >
+                            Next Step →
+                          </button>
+                        </div>
+                      )}
+
+                      {telegramStep === 2 && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-ivory-light/70">Step 2: Get Your Chat ID</p>
+                          <ol className="text-sm text-ivory-light/60 list-decimal list-inside space-y-1">
+                            <li>Search for <strong>@userinfobot</strong> in Telegram</li>
+                            <li>Send any message to it</li>
+                            <li>It will reply with your ID (e.g., 123456789)</li>
+                            <li>Copy this number</li>
+                          </ol>
+                          <div className="flex gap-2 mt-3">
+                            <button 
+                              onClick={() => setTelegramStep(1)}
+                              className="px-4 py-2 text-ivory-light/60 text-sm hover:text-ivory-light transition-colors"
+                            >
+                              ← Back
+                            </button>
+                            <button 
+                              onClick={() => setTelegramStep(3)}
+                              className="px-4 py-2 bg-sacred-teal/20 border border-sacred-teal/30 rounded-lg text-sacred-teal text-sm hover:bg-sacred-teal/30 transition-colors"
+                            >
+                              Next Step →
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {telegramStep === 3 && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-ivory-light/70">Step 3: Enter Your Details</p>
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              placeholder="Bot Token (e.g., 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11)"
+                              value={integrations.telegram.botToken}
+                              onChange={(e) => setIntegrations({...integrations, telegram: {...integrations.telegram, botToken: e.target.value}})}
+                              className="w-full px-3 py-2 bg-royal-plum/30 border border-warm-gold/20 rounded-lg text-ivory-light text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Chat ID (e.g., 123456789)"
+                              value={integrations.telegram.chatId}
+                              onChange={(e) => setIntegrations({...integrations, telegram: {...integrations.telegram, chatId: e.target.value}})}
+                              className="w-full px-3 py-2 bg-royal-plum/30 border border-warm-gold/20 rounded-lg text-ivory-light text-sm"
+                            />
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button 
+                              onClick={() => setTelegramStep(2)}
+                              className="px-4 py-2 text-ivory-light/60 text-sm hover:text-ivory-light transition-colors"
+                            >
+                              ← Back
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (integrations.telegram.botToken && integrations.telegram.chatId) {
+                                  setIntegrations({...integrations, telegram: {...integrations.telegram, connected: true}});
+                                  setSaved(true);
+                                  setTimeout(() => setSaved(false), 3000);
+                                }
+                              }}
+                              className="px-4 py-2 bg-sacred-teal/20 border border-sacred-teal/30 rounded-lg text-sacred-teal text-sm hover:bg-sacred-teal/30 transition-colors"
+                            >
+                              Connect Telegram
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 border-t border-warm-gold/10 pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-ivory-light/70">Bot Token</p>
+                        <p className="text-sm text-ivory-light">{integrations.telegram.botToken.slice(0, 20)}...</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-ivory-light/70">Chat ID</p>
+                        <p className="text-sm text-ivory-light">{integrations.telegram.chatId}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIntegrations({...integrations, telegram: {...integrations.telegram, connected: false, botToken: '', chatId: ''}})}
+                      className="mt-3 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm hover:bg-red-500/20 transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
