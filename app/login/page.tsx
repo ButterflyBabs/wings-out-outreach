@@ -69,6 +69,46 @@ export default function LoginPage() {
     }
   }
 
+  async function handleDemoLogin() {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      // Sign in with demo credentials
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'demo@wingsout.app',
+        password: 'demo123456'
+      });
+
+      if (error) {
+        // If demo user doesn't exist, create it
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: 'demo@wingsout.app',
+          password: 'demo123456'
+        });
+        
+        if (signUpError) throw signUpError;
+        
+        // Try signing in again
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: 'demo@wingsout.app',
+          password: 'demo123456'
+        });
+        
+        if (loginError) throw loginError;
+      }
+      
+      setSuccess('Demo mode activated! Redirecting...');
+      setTimeout(() => router.push('/'), 1000);
+    } catch (err: any) {
+      setError('Demo login failed: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -183,20 +223,46 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-ivory-light/60">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                  setSuccess('');
-                }}
-                className="ml-2 text-sacred-teal hover:text-sacred-teal/80 font-medium"
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
+          <div className="mt-6 space-y-3">
+            <div className="text-center">
+              <p className="text-ivory-light/60">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                <button
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="ml-2 text-sacred-teal hover:text-sacred-teal/80 font-medium"
+                >
+                  {isLogin ? 'Sign up' : 'Sign in'}
+                </button>
+              </p>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-warm-gold/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-royal-plum/10 text-ivory-light/40">or</span>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full py-3 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-400 font-medium hover:bg-purple-500/30 transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <span className="text-xl">🚀</span>
+                  Try Demo (No Login Required)
+                </>
+              )}
+            </button>
           </div>
         </div>
 
