@@ -41,9 +41,25 @@ export default function OutreachPage() {
   async function loadCampaigns() {
     try {
       const { supabase } = await import('@/lib/supabase');
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Use default campaigns if not logged in
+        setCampaigns([
+          { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, description: 'Outreach to mobility equipment companies for Q3', created_at: '2026-06-20' },
+          { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', description: 'Targeting service dog equipment and food brands', created_at: '2026-06-22' },
+          { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, description: 'Follow-up campaign for adaptive clothing companies', created_at: '2026-06-15' },
+        ]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await (supabase as any)
         .from('campaigns')
         .select('*')
+        .eq('created_by', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -105,6 +121,15 @@ export default function OutreachPage() {
     try {
       const { supabase } = await import('@/lib/supabase');
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        alert('Please sign in to create campaigns');
+        setSaving(false);
+        return;
+      }
+      
       const campaignData = {
         name: newCampaign.name,
         type: newCampaign.type,
@@ -114,7 +139,8 @@ export default function OutreachPage() {
         response_count: 0,
         description: newCampaign.description || null,
         scheduled_date: newCampaign.scheduled_date || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        created_by: user.id
       };
       
       const { data, error } = await (supabase as any)
