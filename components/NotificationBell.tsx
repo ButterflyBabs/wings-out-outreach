@@ -56,7 +56,8 @@ export default function NotificationBell() {
   ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const unreadNotifications = notifications.filter(n => !n.read).slice(0, 5);
+  // Show same notifications as the notifications page (all unread, not just 5)
+  const unreadNotifications = notifications.filter(n => !n.read);
 
   function markAsRead(id: string) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
