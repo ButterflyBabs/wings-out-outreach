@@ -171,7 +171,7 @@ export default function OutreachPage() {
         description: newCampaign.description || null,
         scheduled_date: newCampaign.scheduled_date || null,
         created_at: new Date().toISOString(),
-        created_by: user.id
+        created_by: user?.id
       };
       
       const { data, error } = await (supabase as any)
