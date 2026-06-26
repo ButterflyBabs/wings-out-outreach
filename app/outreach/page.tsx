@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, Send, CheckCircle2, Plus, X, Calendar, Users, Edit2, Trash2, Eye, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Send, CheckCircle2, Plus, X, Calendar, Users, Edit2, Trash2, Eye, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -29,12 +29,47 @@ export default function OutreachPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, description: 'Outreach to mobility equipment companies for Q3', created_at: '2026-06-20' },
-    { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', description: 'Targeting service dog equipment and food brands', created_at: '2026-06-22' },
-    { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, description: 'Follow-up campaign for adaptive clothing companies', created_at: '2026-06-15' },
-  ]);
+  // Load campaigns from Supabase on mount
+  useEffect(() => {
+    loadCampaigns();
+  }, []);
+
+  async function loadCampaigns() {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data, error } = await (supabase as any)
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setCampaigns(data);
+      } else {
+        // Use default campaigns if none exist
+        setCampaigns([
+          { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, description: 'Outreach to mobility equipment companies for Q3', created_at: '2026-06-20' },
+          { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', description: 'Targeting service dog equipment and food brands', created_at: '2026-06-22' },
+          { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, description: 'Follow-up campaign for adaptive clothing companies', created_at: '2026-06-15' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+      // Fallback to default campaigns
+      setCampaigns([
+        { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, description: 'Outreach to mobility equipment companies for Q3', created_at: '2026-06-20' },
+        { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', description: 'Targeting service dog equipment and food brands', created_at: '2026-06-22' },
+        { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, description: 'Follow-up campaign for adaptive clothing companies', created_at: '2026-06-15' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const [newCampaign, setNewCampaign] = useState({
     name: '',
@@ -63,50 +98,110 @@ export default function OutreachPage() {
   const totalSent = campaigns.reduce((sum, c) => sum + c.sent_count, 0);
   const totalResponses = campaigns.reduce((sum, c) => sum + c.response_count, 0);
 
-  function handleCreateCampaign(e: React.FormEvent) {
+  async function handleCreateCampaign(e: React.FormEvent) {
     e.preventDefault();
-    const campaign: Campaign = {
-      id: Date.now().toString(),
-      name: newCampaign.name,
-      type: newCampaign.type,
-      status: newCampaign.scheduled_date ? 'scheduled' : 'draft',
-      target_count: newCampaign.target_count,
-      sent_count: 0,
-      response_count: 0,
-      description: newCampaign.description,
-      scheduled_date: newCampaign.scheduled_date || undefined,
-      created_at: new Date().toISOString().split('T')[0]
-    };
-    setCampaigns([campaign, ...campaigns]);
-    setShowNewCampaignModal(false);
-    setNewCampaign({
-      name: '',
-      type: 'email',
-      target_count: 10,
-      description: '',
-      scheduled_date: '',
-      status: 'draft'
-    });
+    setSaving(true);
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      const campaignData = {
+        name: newCampaign.name,
+        type: newCampaign.type,
+        status: newCampaign.scheduled_date ? 'scheduled' : 'draft',
+        target_count: newCampaign.target_count,
+        sent_count: 0,
+        response_count: 0,
+        description: newCampaign.description || null,
+        scheduled_date: newCampaign.scheduled_date || null,
+        created_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await (supabase as any)
+        .from('campaigns')
+        .insert(campaignData)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add the new campaign to the list
+      setCampaigns([data, ...campaigns]);
+      setShowNewCampaignModal(false);
+      setNewCampaign({
+        name: '',
+        type: 'email',
+        target_count: 10,
+        description: '',
+        scheduled_date: '',
+        status: 'draft'
+      });
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      alert('Failed to save campaign. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleEditCampaign(e: React.FormEvent) {
+  async function handleEditCampaign(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedCampaign) return;
     
-    setCampaigns(campaigns.map(c => 
-      c.id === selectedCampaign.id 
-        ? { ...c, ...editCampaign, scheduled_date: editCampaign.scheduled_date || undefined }
-        : c
-    ));
-    setShowEditModal(false);
-    setSelectedCampaign(null);
+    setSaving(true);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      const updateData = {
+        name: editCampaign.name,
+        type: editCampaign.type,
+        status: editCampaign.status,
+        target_count: editCampaign.target_count,
+        description: editCampaign.description || null,
+        scheduled_date: editCampaign.scheduled_date || null
+      };
+      
+      const { error } = await (supabase as any)
+        .from('campaigns')
+        .update(updateData)
+        .eq('id', selectedCampaign.id);
+      
+      if (error) throw error;
+      
+      setCampaigns(campaigns.map(c => 
+        c.id === selectedCampaign.id 
+          ? { ...c, ...editCampaign, scheduled_date: editCampaign.scheduled_date || undefined }
+          : c
+      ));
+      setShowEditModal(false);
+      setSelectedCampaign(null);
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      alert('Failed to update campaign. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleDeleteCampaign(id: string) {
+  async function handleDeleteCampaign(id: string) {
     if (confirm('Are you sure you want to delete this campaign?')) {
-      setCampaigns(campaigns.filter(c => c.id !== id));
-      setViewMode('list');
-      setSelectedCampaign(null);
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        
+        const { error } = await (supabase as any)
+          .from('campaigns')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        setCampaigns(campaigns.filter(c => c.id !== id));
+        setViewMode('list');
+        setSelectedCampaign(null);
+      } catch (error) {
+        console.error('Error deleting campaign:', error);
+        alert('Failed to delete campaign. Please try again.');
+      }
     }
   }
 
@@ -249,7 +344,11 @@ export default function OutreachPage() {
         <button onClick={() => setTab('messages')} className={`px-4 py-2 rounded-xl text-sm font-medium ${tab === 'messages' ? 'bg-sacred-teal/20 text-sacred-teal border border-sacred-teal/30' : 'bg-royal-plum/20 text-ivory-light/70'}`}>Messages</button>
       </div>
 
-      {tab === 'campaigns' ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 text-sacred-teal animate-spin" />
+        </div>
+      ) : tab === 'campaigns' ? (
         <div className="space-y-4">
           {campaigns.map((c) => (
             <div key={c.id} className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6 hover:border-warm-gold/30 transition-all">
@@ -439,8 +538,11 @@ export default function OutreachPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-warm-gold/10">
-                <button type="button" onClick={() => setShowNewCampaignModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors">Cancel</button>
-                <button type="submit" className="btn-primary flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Create Campaign</button>
+                <button type="button" onClick={() => setShowNewCampaignModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors" disabled={saving}>Cancel</button>
+                <button type="submit" className="btn-primary flex items-center gap-2" disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {saving ? 'Saving...' : 'Create Campaign'}
+                </button>
               </div>
             </form>
           </div>
@@ -555,8 +657,11 @@ export default function OutreachPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-warm-gold/10">
-                <button type="button" onClick={() => setShowEditModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors">Cancel</button>
-                <button type="submit" className="btn-primary flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Save Changes</button>
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors" disabled={saving}>Cancel</button>
+                <button type="submit" className="btn-primary flex items-center gap-2" disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             </form>
           </div>
