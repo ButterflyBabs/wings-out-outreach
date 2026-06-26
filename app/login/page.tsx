@@ -69,67 +69,17 @@ export default function LoginPage() {
     }
   }
 
-  async function handleDemoLogin() {
-    setLoading(true);
-    setError('');
+  function handleDemoLogin() {
+    // Set demo mode flag in localStorage
+    localStorage.setItem('demoMode', 'true');
+    localStorage.setItem('demoUser', JSON.stringify({
+      id: 'demo-user-123',
+      email: 'demo@example.com',
+      name: 'Demo User'
+    }));
     
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      
-      // First try to sign in (user might already exist)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: 'demo.user@example.com',
-        password: 'demo123456'
-      });
-
-      if (!signInError) {
-        // Login successful
-        setSuccess('Demo mode activated! Redirecting...');
-        setTimeout(() => router.push('/'), 1000);
-        return;
-      }
-
-      // If login failed, try to create the user
-      // Wait a bit to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: 'demo.user@example.com',
-        password: 'demo123456'
-      });
-      
-      if (signUpError) {
-        // If user already exists, just try logging in again
-        if (signUpError.message.includes('already registered')) {
-          const { error: finalLoginError } = await supabase.auth.signInWithPassword({
-            email: 'demo.user@example.com',
-            password: 'demo123456'
-          });
-          
-          if (finalLoginError) throw finalLoginError;
-          
-          setSuccess('Demo mode activated! Redirecting...');
-          setTimeout(() => router.push('/'), 1000);
-          return;
-        }
-        throw signUpError;
-      }
-      
-      // Sign up successful, now log in
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: 'demo.user@example.com',
-        password: 'demo123456'
-      });
-      
-      if (loginError) throw loginError;
-      
-      setSuccess('Demo mode activated! Redirecting...');
-      setTimeout(() => router.push('/'), 1000);
-    } catch (err: any) {
-      setError('Demo login failed: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+    setSuccess('Demo mode activated! Redirecting...');
+    setTimeout(() => router.push('/'), 1000);
   }
 
   return (

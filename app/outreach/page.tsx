@@ -124,8 +124,39 @@ export default function OutreachPage() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
+      // Check for demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      
+      if (!user && !isDemoMode) {
         window.location.href = '/login';
+        setSaving(false);
+        return;
+      }
+      
+      // In demo mode, just add to local state without database
+      if (isDemoMode) {
+        const campaign: Campaign = {
+          id: 'demo-' + Date.now().toString(),
+          name: newCampaign.name,
+          type: newCampaign.type,
+          status: newCampaign.scheduled_date ? 'scheduled' : 'draft',
+          target_count: newCampaign.target_count,
+          sent_count: 0,
+          response_count: 0,
+          description: newCampaign.description,
+          scheduled_date: newCampaign.scheduled_date || undefined,
+          created_at: new Date().toISOString().split('T')[0]
+        };
+        setCampaigns([campaign, ...campaigns]);
+        setShowNewCampaignModal(false);
+        setNewCampaign({
+          name: '',
+          type: 'email',
+          target_count: 10,
+          description: '',
+          scheduled_date: '',
+          status: 'draft'
+        });
         setSaving(false);
         return;
       }
