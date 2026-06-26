@@ -125,7 +125,7 @@ export default function OutreachPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        alert('Please sign in to create campaigns');
+        window.location.href = '/login';
         setSaving(false);
         return;
       }
