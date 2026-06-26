@@ -222,20 +222,13 @@ export default function LoginPage() {
               </div>
             </div>
             
-            <button
-              onClick={handleDemoLogin}
-              disabled={loading}
+            <Link
+              href="/demo"
               className="w-full py-3 bg-purple-500/20 border border-purple-500/30 rounded-xl text-purple-400 font-medium hover:bg-purple-500/30 transition-colors flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span className="text-xl">🚀</span>
-                  Try Demo (No Login Required)
-                </>
-              )}
-            </button>
+              <span className="text-xl">🚀</span>
+              Try Demo (No Login Required)
+            </Link>
           </div>
         </div>
 
