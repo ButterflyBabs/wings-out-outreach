@@ -10,8 +10,7 @@ import {
   AlertCircle,
   DollarSign,
   Briefcase,
-  Plus,
-  Bell
+  Plus
 } from 'lucide-react';
 
 // Mark as dynamic to avoid static generation issues
@@ -178,19 +177,13 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="p-2 rounded-lg hover:bg-royal-plum/30 text-ivory-light/70 relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-sacred-teal rounded-full" />
-          </button>
-          <button 
-            onClick={() => window.location.href = '/companies'}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Company</span>
-          </button>
-        </div>
+        <button 
+          onClick={() => window.location.href = '/companies'}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add Company</span>
+        </button>
       </header>
 
       {/* Welcome Banner */}
