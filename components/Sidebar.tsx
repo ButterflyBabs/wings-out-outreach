@@ -15,7 +15,8 @@ import {
   X,
   LayoutDashboard,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Bell
 } from 'lucide-react';
 
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { id: 'approvals', label: 'Approvals', icon: CheckCircle2, href: '/approvals' },
   { id: 'revenue', label: 'Revenue', icon: DollarSign, href: '/revenue' },
   { id: 'guidance', label: 'Industry Guidance', icon: BookOpen, href: '/guidance' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
 ];
 
