@@ -70,7 +70,7 @@ export default function LoginPage() {
   }
 
   function handleDemoLogin() {
-    // Set demo mode flag in localStorage
+    // Demo mode - no Supabase auth needed
     localStorage.setItem('demoMode', 'true');
     localStorage.setItem('demoUser', JSON.stringify({
       id: 'demo-user-123',
