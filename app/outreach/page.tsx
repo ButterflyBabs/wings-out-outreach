@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Send, CheckCircle2, Plus, X, Calendar, Target, Users, FileText } from 'lucide-react';
+import { Mail, Send, CheckCircle2, Plus, X, Calendar, Users, Edit2, Trash2, Eye, ArrowLeft } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -26,10 +26,14 @@ interface Message {
 export default function OutreachPage() {
   const [tab, setTab] = useState<'campaigns' | 'messages'>('campaigns');
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
+  
   const [campaigns, setCampaigns] = useState<Campaign[]>([
-    { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, created_at: '2026-06-20' },
-    { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', created_at: '2026-06-22' },
-    { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, created_at: '2026-06-15' },
+    { id: '1', name: 'Q3 Mobility Outreach', type: 'email', status: 'active', sent_count: 18, target_count: 25, response_count: 3, description: 'Outreach to mobility equipment companies for Q3', created_at: '2026-06-20' },
+    { id: '2', name: 'Service Dog Brands', type: 'mixed', status: 'scheduled', sent_count: 0, target_count: 15, response_count: 0, scheduled_date: '2026-06-28', description: 'Targeting service dog equipment and food brands', created_at: '2026-06-22' },
+    { id: '3', name: 'Clothing Follow-up', type: 'email', status: 'completed', sent_count: 10, target_count: 10, response_count: 2, description: 'Follow-up campaign for adaptive clothing companies', created_at: '2026-06-15' },
   ]);
 
   const [newCampaign, setNewCampaign] = useState({
@@ -39,6 +43,15 @@ export default function OutreachPage() {
     description: '',
     scheduled_date: '',
     status: 'draft' as 'draft' | 'scheduled'
+  });
+
+  const [editCampaign, setEditCampaign] = useState({
+    name: '',
+    type: 'email' as 'email' | 'dm' | 'mixed',
+    target_count: 10,
+    description: '',
+    scheduled_date: '',
+    status: 'draft' as 'draft' | 'scheduled' | 'active' | 'paused' | 'completed'
   });
 
   const messages: Message[] = [
@@ -76,6 +89,45 @@ export default function OutreachPage() {
     });
   }
 
+  function handleEditCampaign(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCampaign) return;
+    
+    setCampaigns(campaigns.map(c => 
+      c.id === selectedCampaign.id 
+        ? { ...c, ...editCampaign, scheduled_date: editCampaign.scheduled_date || undefined }
+        : c
+    ));
+    setShowEditModal(false);
+    setSelectedCampaign(null);
+  }
+
+  function handleDeleteCampaign(id: string) {
+    if (confirm('Are you sure you want to delete this campaign?')) {
+      setCampaigns(campaigns.filter(c => c.id !== id));
+      setViewMode('list');
+      setSelectedCampaign(null);
+    }
+  }
+
+  function openEditModal(campaign: Campaign) {
+    setEditCampaign({
+      name: campaign.name,
+      type: campaign.type,
+      target_count: campaign.target_count,
+      description: campaign.description || '',
+      scheduled_date: campaign.scheduled_date || '',
+      status: campaign.status
+    });
+    setSelectedCampaign(campaign);
+    setShowEditModal(true);
+  }
+
+  function viewCampaign(campaign: Campaign) {
+    setSelectedCampaign(campaign);
+    setViewMode('detail');
+  }
+
   const statusColors: Record<string, string> = {
     draft: 'bg-gray-500/20 text-gray-400',
     scheduled: 'bg-purple-500/20 text-purple-400',
@@ -83,6 +135,84 @@ export default function OutreachPage() {
     paused: 'bg-yellow-500/20 text-yellow-400',
     completed: 'bg-blue-500/20 text-blue-400'
   };
+
+  if (viewMode === 'detail' && selectedCampaign) {
+    return (
+      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setViewMode('list')}
+            className="p-2 hover:bg-royal-plum/30 rounded-lg text-ivory-light/70"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-warm-gold">{selectedCampaign.name}</h1>
+            <p className="text-ivory-light/60 mt-1">Campaign Details</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
+            <p className="text-ivory-light/60 text-sm">Status</p>
+            <span className={`inline-block px-3 py-1 rounded-lg text-sm font-medium mt-2 ${statusColors[selectedCampaign.status]}`}>
+              {selectedCampaign.status}
+            </span>
+          </div>
+          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
+            <p className="text-ivory-light/60 text-sm">Type</p>
+            <p className="text-xl font-bold text-ivory-light capitalize mt-2">{selectedCampaign.type}</p>
+          </div>
+          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
+            <p className="text-ivory-light/60 text-sm">Progress</p>
+            <p className="text-xl font-bold text-sacred-teal mt-2">{selectedCampaign.sent_count} / {selectedCampaign.target_count}</p>
+          </div>
+          <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
+            <p className="text-ivory-light/60 text-sm">Responses</p>
+            <p className="text-xl font-bold text-green-400 mt-2">{selectedCampaign.response_count}</p>
+          </div>
+        </div>
+
+        <div className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
+          <h2 className="font-semibold text-ivory-light mb-4">Campaign Details</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-ivory-light/60">Description</label>
+              <p className="text-ivory-light mt-1">{selectedCampaign.description || 'No description'}</p>
+            </div>
+            {selectedCampaign.scheduled_date && (
+              <div>
+                <label className="text-sm text-ivory-light/60">Scheduled Date</label>
+                <p className="text-ivory-light mt-1 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  {selectedCampaign.scheduled_date}
+                </p>
+              </div>
+            )}
+            <div>
+              <label className="text-sm text-ivory-light/60">Created</label>
+              <p className="text-ivory-light mt-1">{selectedCampaign.created_at}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button 
+            onClick={() => openEditModal(selectedCampaign)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Edit2 className="w-4 h-4" /> Edit Campaign
+          </button>
+          <button 
+            onClick={() => handleDeleteCampaign(selectedCampaign.id)}
+            className="px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 hover:bg-red-500/20 transition-colors flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" /> Delete
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -122,11 +252,16 @@ export default function OutreachPage() {
       {tab === 'campaigns' ? (
         <div className="space-y-4">
           {campaigns.map((c) => (
-            <div key={c.id} className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-semibold text-ivory-light">{c.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
+            <div key={c.id} className="bg-royal-plum/10 border border-warm-gold/10 rounded-2xl p-6 hover:border-warm-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 
+                    className="font-semibold text-ivory-light text-lg cursor-pointer hover:text-sacred-teal transition-colors"
+                    onClick={() => viewCampaign(c)}
+                  >
+                    {c.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className={`px-2 py-1 rounded text-xs ${statusColors[c.status]}`}>
                       {c.status}
                     </span>
@@ -138,10 +273,32 @@ export default function OutreachPage() {
                       </span>
                     )}
                   </div>
+                  {c.description && (
+                    <p className="text-sm text-ivory-light/60 mt-2 line-clamp-1">{c.description}</p>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-warm-gold">{c.response_count}</p>
-                  <p className="text-xs text-ivory-light/50">responses</p>
+                <div className="flex items-center gap-2 ml-4">
+                  <button 
+                    onClick={() => viewCampaign(c)}
+                    className="p-2 hover:bg-royal-plum/30 rounded-lg text-ivory-light/60 hover:text-ivory-light transition-colors"
+                    title="View Details"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => openEditModal(c)}
+                    className="p-2 hover:bg-royal-plum/30 rounded-lg text-ivory-light/60 hover:text-ivory-light transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteCampaign(c.id)}
+                    className="p-2 hover:bg-red-500/20 rounded-lg text-ivory-light/60 hover:text-red-400 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
               <div className="h-2 bg-royal-plum/30 rounded-full">
@@ -150,7 +307,10 @@ export default function OutreachPage() {
                   style={{ width: `${c.target_count > 0 ? (c.sent_count / c.target_count) * 100 : 0}%` }} 
                 />
               </div>
-              <p className="text-sm text-ivory-light/60 mt-2">{c.sent_count} / {c.target_count} sent</p>
+              <div className="flex justify-between mt-2">
+                <p className="text-sm text-ivory-light/60">{c.sent_count} / {c.target_count} sent</p>
+                <p className="text-sm text-green-400">{c.response_count} responses</p>
+              </div>
             </div>
           ))}
         </div>
@@ -207,9 +367,7 @@ export default function OutreachPage() {
 
             <form onSubmit={handleCreateCampaign} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-ivory-light/70 mb-2">
-                  Campaign Name *
-                </label>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Campaign Name *</label>
                 <input
                   type="text"
                   required
@@ -221,9 +379,7 @@ export default function OutreachPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ivory-light/70 mb-2">
-                  Campaign Type
-                </label>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Campaign Type</label>
                 <div className="grid grid-cols-3 gap-3">
                   {(['email', 'dm', 'mixed'] as const).map((type) => (
                     <button
@@ -246,9 +402,7 @@ export default function OutreachPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ivory-light/70 mb-2">
-                  Target Number of Companies
-                </label>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Target Number of Companies</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="number"
@@ -263,24 +417,18 @@ export default function OutreachPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ivory-light/70 mb-2">
-                  Schedule (Optional)
-                </label>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Schedule (Optional)</label>
                 <input
                   type="date"
                   value={newCampaign.scheduled_date}
                   onChange={(e) => setNewCampaign({...newCampaign, scheduled_date: e.target.value})}
                   className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light"
                 />
-                <p className="text-xs text-ivory-light/50 mt-1">
-                  Leave blank to save as draft
-                </p>
+                <p className="text-xs text-ivory-light/50 mt-1">Leave blank to save as draft</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ivory-light/70 mb-2">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Description</label>
                 <textarea
                   value={newCampaign.description}
                   onChange={(e) => setNewCampaign({...newCampaign, description: e.target.value})}
@@ -291,20 +439,124 @@ export default function OutreachPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-warm-gold/10">
-                <button
-                  type="button"
-                  onClick={() => setShowNewCampaignModal(false)}
-                  className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors"
+                <button type="button" onClick={() => setShowNewCampaignModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors">Cancel</button>
+                <button type="submit" className="btn-primary flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Create Campaign</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Campaign Modal */}
+      {showEditModal && selectedCampaign && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-deep-indigo border border-warm-gold/20 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-warm-gold/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sacred-teal/20 flex items-center justify-center">
+                  <Edit2 className="w-5 h-5 text-sacred-teal" />
+                </div>
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-warm-gold">Edit Campaign</h2>
+                  <p className="text-sm text-ivory-light/60">Update campaign details</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-royal-plum/30 rounded-lg text-ivory-light/60"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditCampaign} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Campaign Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editCampaign.name}
+                  onChange={(e) => setEditCampaign({...editCampaign, name: e.target.value})}
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Status</label>
+                <select
+                  value={editCampaign.status}
+                  onChange={(e) => setEditCampaign({...editCampaign, status: e.target.value as any})}
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Create Campaign
-                </button>
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Campaign Type</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['email', 'dm', 'mixed'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEditCampaign({...editCampaign, type})}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium capitalize transition-all ${
+                        editCampaign.type === type
+                          ? 'bg-sacred-teal/20 text-sacred-teal border border-sacred-teal/30'
+                          : 'bg-royal-plum/20 text-ivory-light/70 border border-transparent hover:bg-royal-plum/30'
+                      }`}
+                    >
+                      {type === 'email' && <Mail className="w-4 h-4 inline mr-2" />}
+                      {type === 'dm' && <Send className="w-4 h-4 inline mr-2" />}
+                      {type === 'mixed' && <Users className="w-4 h-4 inline mr-2" />}
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Target Number of Companies</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={editCampaign.target_count}
+                    onChange={(e) => setEditCampaign({...editCampaign, target_count: parseInt(e.target.value) || 10})}
+                    className="w-24 px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light text-center"
+                  />
+                  <span className="text-ivory-light/60">companies</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Schedule Date</label>
+                <input
+                  type="date"
+                  value={editCampaign.scheduled_date}
+                  onChange={(e) => setEditCampaign({...editCampaign, scheduled_date: e.target.value})}
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-ivory-light/70 mb-2">Description</label>
+                <textarea
+                  value={editCampaign.description}
+                  onChange={(e) => setEditCampaign({...editCampaign, description: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-royal-plum/20 border border-warm-gold/20 rounded-xl text-ivory-light"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-warm-gold/10">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-6 py-3 text-ivory-light/70 hover:text-ivory-light transition-colors">Cancel</button>
+                <button type="submit" className="btn-primary flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Save Changes</button>
               </div>
             </form>
           </div>
@@ -313,4 +565,3 @@ export default function OutreachPage() {
     </div>
   );
 }
-// Deploy check Fri Jun 26 00:54:41 UTC 2026
